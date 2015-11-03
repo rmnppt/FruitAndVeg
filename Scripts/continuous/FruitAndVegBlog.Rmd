@@ -7,9 +7,9 @@ output: html_document
 
 ```{r, echo=FALSE}
 # some setup
-path <- "~/Dropbox/dataStuff/Fruit&Veg/"
+path <- "~/Dropbox/dataStuff/GITHUB/FruitAndVeg/"
 mods <- readRDS(paste0(path, "Data/continuousSTL.rds"))
-source(paste0(path, "scripts/plotSTL.R"))
+source(paste0(path, "Scripts/plotSTL.R"))
 
 # extract the relevant stats
 things <- names(mods)
@@ -67,7 +67,7 @@ text(0.8, 0.85, "seasonal = trend", srt = 45)
 
 This pattern revealed is that a large number of products have a relatively high trend over the years compared to the seasonal variation. The way the calculations are done, it would be impossible to have both[^2]. There is a bit of a disclaimer here; I have not made any corrections for inflation and so we would expect prices to be going up over an 11 year period. I would take these interpretations lightly, this excercise was just to imagine; if you needed a tool to decide when to buy certain produce, what would it look like?
 
-The code for the data cleaning, calculations and plots are all on [github](). And feel free to email us for more info.
+The code for the data cleaning, calculations and plots are all on [github](https://github.com/rmnppt/FruitAndVeg). And feel free to email us for more info.
 
 See you next time.
 
