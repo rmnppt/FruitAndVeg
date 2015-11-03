@@ -1,0 +1,76 @@
+---
+title: "Fruit and Veg Prices"
+author: "Roman Popat"
+date: "30 October 2015"
+output: html_document
+---
+
+```{r, echo=FALSE}
+# some setup
+path <- "~/Dropbox/dataStuff/Fruit&Veg/"
+mods <- readRDS(paste0(path, "Data/continuousSTL.rds"))
+source(paste0(path, "scripts/plotSTL.R"))
+
+# extract the relevant stats
+things <- names(mods)
+nThings <- length(things)
+
+results <- data.frame(
+  item = things,
+  seasonal = NA,
+  trend = NA
+)
+for(i in 1:nThings){
+  if(is.null(mods[[i]])){ next }
+  this <- mods[[i]]$time.series
+  var_total <- sum(c(
+    var(this[,"seasonal"]), 
+    var(this[,"trend"]), 
+    var(this[,"remainder"])))
+  results$seasonal[i] <- var(this[,"seasonal"]) / var_total
+  results$trend[i] <- var(this[,"trend"]) / var_total
+}
+
+search <- "Carrots"
+```
+
+Have you ever stumbled around the supermarket wandering whether a certain fruit or vegetable or flower is in season? Here is something that might help; the Department for the Environment, Food and Rural Affairs (DEFRA) published a dataset on the [wholesale prices](https://data.gov.uk/dataset/agricultural_market_reports) of various homegrown fruit and vegetables. These prices are sampled from a selection of markets around the UK. Firstly one might want to simply view a time series of prices of a particular product. In this image the red and white stripes represent the changing years, when the colour changes the year changes.
+
+```{r, echo=FALSE, fig.width=8, fig.height=2.25}
+thisGuy <- mods[grep(search, names(mods))][[1]]
+plotSTL(thisGuy, search, 1)
+```
+
+There is a fair bit of variation in the price of `r search` from 2004 until 2015, with some big peaks and troughs. What we'd like to know is whether there is any pattern over the season, in other words is there a good and bad time of year to buy this product (purely with regards to price). One way to achieve this is via a method called 'STL' or seasonal-trend decomposition via loess[^1]. If you want the full details, see the paper in the footnotes, its a great read. This method decomposes the time series into 3 components; seasonal variation, trend and the remainder. This is done in such a way that when summed, the three components recapitulate the original data series.
+
+```{r, echo=FALSE, fig.width=8, fig.height=5}
+plotSTL(thisGuy, search, 4)
+```
+
+Now we can clearly see that there is some seasonal pattern, which itself varies from year to year. It seems that `r search` are cheapest at the beginning and end of a year (red and white stripes) and the price peaks towards the middle of the year in the summer. This pattern was especially pronounced in the summer of 2012 when `r search` reached their peak price of £`r max(rowSums(thisGuy$time.series))` per kg (remember this is the wholesale price). This was when the seasonal variation was also at its most pronounced. Secondly there is a fairly pronounced positive trend in the price from 2004 on the left to 2015 on the right. This takes a little bit of a dip in 2014 and then begins to recover again in 2015. Finally the 4th panel 'remainder' shows us whats left once the seasonal variation and trend are accounted for. We could use this to identify any erratic price variation. If the seasonal variation and trend are very predictable then this variation in this final panel should be small.
+
+A significant benefit of this method is that we can now measure the relative size of the seasonal and trend components of these prices. This can be done for the whole DEFRA library of fruit, vegatebles and flowers. This would allow us to see and compare at a glance the relative extent of seasonal and trend variation. This then tells us; for which products is it especially important to pay attention to the time of year.
+
+```{r, echo=FALSE, fig.width=5, fig.height=5}
+yl <- c(0, 1)
+par(pin = c(3, 3))
+plot(seasonal ~ trend, results, type = "n", ann = F,
+     yaxt = "n", xaxt = "n", ylim = yl, xlim = yl)
+abline(0, 1, lty = 3)
+symbols(results$seasonal ~ results$trend, 
+        circles = results$seasonal + results$trend, 
+        add = T, inches = 0.1, fg = "grey", bg = "#ff000050")
+mtext("high seasonal variation", 2, 1, F, adj = 1)
+mtext("strong trend", 1, 1, F, adj = 1)
+text(0.8, 0.85, "seasonal = trend", srt = 45)
+```
+
+This pattern revealed is that a large number of products have a relatively high trend over the years compared to the seasonal variation. The way the calculations are done, it would be impossible to have both[^2]. There is a bit of a disclaimer here; I have not made any corrections for inflation and so we would expect prices to be going up over an 11 year period. I would take these interpretations lightly, this excercise was just to imagine; if you needed a tool to decide when to buy certain produce, what would it look like?
+
+The code for the data cleaning, calculations and plots are all on [github](). And feel free to email us for more info.
+
+See you next time.
+
+[^1]: I used the R function: `stl()` but a full description of the method can be found in the following reference. R. B. Cleveland, W. S. Cleveland, J.E. McRae, and I. Terpenning (1990) STL: A Seasonal-Trend Decomposition Procedure Based on Loess. Journal of Official Statistics, 6, 3–73
+
+[^2]: The numbers are proportional variance for example seasonal variance is calculated as variance in the seasonal component divided by the sum of the variances in all three components.
