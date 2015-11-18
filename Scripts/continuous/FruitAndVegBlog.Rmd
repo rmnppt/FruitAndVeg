@@ -3,7 +3,7 @@
 title: "Fruit and Veg Prices"
 author: "Roman Popat"
 date: "30 October 2015"
-output: word_document
+output: html_document
 ---
 
 ```{r, echo=FALSE, message = F}
@@ -39,7 +39,7 @@ for(i in 1:nThings){
 search <- "carrots"
 ```
 
-Is the price of certain vegetables and fruits sensitive to the time of year? You might expect so given growing seasons and fluctuations in supply. How would we decide in a systematic way which products to look out for when buying 'in season' veg? Here is something that might help; the Department for the Environment, Food and Rural Affairs (DEFRA) published a dataset on the [wholesale prices](https://data.gov.uk/dataset/agricultural_market_reports) of various homegrown fruit and vegetables. These prices are sampled from a selection of markets around the UK. Firstly we can look at a time series of prices of a particular product. In this image the red and white stripes represent the changing years.
+Is the price of certain vegetables and fruits sensitive to the time of year? You might expect so given growing seasons and fluctuations in supply. How would we decide in a systematic way which products to look out for when buying 'in season' veg? Here is something that might help; the Department for the Environment, Food and Rural Affairs (DEFRA) published a dataset on the [wholesale prices](https://data.gov.uk/dataset/agricultural_market_reports) of various homegrown fruit and vegetables. These prices are sampled from a selection of markets around the UK. Here is an example of the price of a single product; `r search`, over time. In this image the red and white stripes represent the changing years.
 
 ```{r, echo=FALSE, fig.width=8, fig.height=2.25}
 thisGuy <- mods[grep(search, names(mods), ignore.case = T)][[1]]
