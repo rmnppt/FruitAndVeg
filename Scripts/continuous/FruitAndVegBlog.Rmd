@@ -1,11 +1,10 @@
 
 ---
-title: "Fruit and Veg Prices"
+title: "A look at data on fruit and veg Prices"
 author: "Roman Popat"
 date: "30 October 2015"
 output: html_document
 ---
-
 ```{r, echo=FALSE, message = F}
 library(dplyr)
 library(pander)
@@ -39,16 +38,31 @@ for(i in 1:nThings){
 search <- "carrots"
 ```
 
+#### Key Points
+
+* Ever wondered when is the best time in the season to buy certain products?
+* We examined a dataset from DEFRA on wholesale prices of fruit and Veg.
+* We applied a technique called 'seasonal trend decomposition'.
+* When buying Strawberries (and anything in the table below), 
+pay attention to the time of year.
+
+
 Is the price of certain vegetables and fruits sensitive to the time of year? You might expect so given growing seasons and fluctuations in supply. How would we decide in a systematic way which products to look out for when buying 'in season' veg? Here is something that might help; the Department for the Environment, Food and Rural Affairs (DEFRA) published a dataset on the [wholesale prices](https://data.gov.uk/dataset/agricultural_market_reports) of various homegrown fruit and vegetables. These prices are sampled from a selection of markets around the UK. Here is an example of the price of a single product; `r search`, over time. In this image the red and white stripes represent the changing years.
 
+#### Figure 1
 ```{r, echo=FALSE, fig.width=8, fig.height=2.25}
+jpeg("~/Dropbox/dataStuff/GITHUB/FruitAndVeg/plots/blog_figure1.jpg", 
+     width = 620, height = 200)
 thisGuy <- mods[grep(search, names(mods), ignore.case = T)][[1]]
 plotSTL(thisGuy, search, 1)
 ```
 
 There is a fair bit of variation in the price of `r search` from 2004 until 2015, with some big peaks and troughs. Is there a good and bad time of year to buy this product (purely with regards to price)? One way to measure this is via a method called 'STL' or seasonal-trend decomposition via loess[^1]. If you want the full details, see the paper in the footnotes, its a great read. This method decomposes the time series into 3 components; seasonal variation, trend and the remainder. This is done in such a way that when the three components are summed, this reproduces the original data.
 
+#### Figure 2
 ```{r, echo=FALSE, fig.width=8, fig.height=5}
+jpeg("~/Dropbox/dataStuff/GITHUB/FruitAndVeg/plots/blog_figure2.jpg", 
+     width = 620, height = 500)
 plotSTL(thisGuy, search, 4)
 ```
 
@@ -56,21 +70,25 @@ Now we can clearly see that there is some seasonal pattern, which itself varies 
 
 A significant benefit of this method is that we can now measure the relative size of the seasonal and trend components of these prices. This can be done for the whole DEFRA library of fruit, vegatebles and flowers. This would allow us to see and compare at a glance the relative extent of seasonal and trend variation. This then tells us; for which products is it especially important to pay attention to the time of year.
 
+#### Figure 3
 ```{r, echo=FALSE, fig.width=5, fig.height=5}
 top10 <- results %>% 
   top_n(10, seasonal) %>% 
   arrange(desc(seasonal))
 
 yl <- c(0, 1)
-par(pin = c(3, 3))
+
+jpeg("~/Dropbox/dataStuff/GITHUB/FruitAndVeg/plots/blog_figure3.jpg", 
+     width = 620, height = 620)
+par(pin = c(5, 5), cex = 1.5)
 plot(seasonal ~ trend, results, type = "n", ann = F,
      yaxt = "n", xaxt = "n", ylim = yl, xlim = yl)
 abline(0, 1, lty = 3)
 symbols(results$seasonal ~ results$trend, 
         circles = results$seasonal + results$trend, 
-        add = T, inches = 0.1, fg = "grey", bg = "#ff000050")
-mtext("high seasonal variation", 2, 1, F, adj = 1)
-mtext("strong trend", 1, 1, F, adj = 1)
+        add = T, inches = 0.2, fg = "grey", bg = "#ff000050")
+mtext("high seasonal variation", 2, 1, F, adj = 1, cex = 1.5)
+mtext("strong trend", 1, 1, F, adj = 1, cex = 1.5)
 text(0.8, 0.85, "seasonal = trend", srt = 45)
 with(top10, {
   text(trend, seasonal, 1:10, cex = 0.7)
