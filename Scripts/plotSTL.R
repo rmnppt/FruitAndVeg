@@ -2,19 +2,19 @@ addBox <- function(x, ...) {
   plot(x, type = "n", ann = F, 
        xaxt = "n", yaxt = "n", ...)
 }
-addRect <- function(x) {
+addRect <- function(x, interval, ...) {
   xVals <- 1:length(x)
   yRange <- extendrange(r = range(x), f = 100)
   yMin <- yRange[1]; yMax <- yRange[2]
-  n <- floor((length(x)/12)/2)
-  x <- c(1, 12, 12, 1)
+  n <- floor((length(x)/interval)/2)
+  x <- c(1, interval, interval, 1)
   y <- c(yMin, yMin, yMax, yMax)
   for(i in 1:n){
     polygon(x, y, col = "#ff000020", border = NA)
-    x <- x + 24
+    x <- x + (interval*2)
   }
 }
-plotSTL <- function(x, title, n = 4) {
+plotSTL <- function(x, title, n = 4, interval, ...) {
   par(mfrow = c(n, 1), 
       mar = c(0.5, 2, 0.5, 5),
       oma = c(2, 2, 3, 1))
@@ -27,8 +27,8 @@ plotSTL <- function(x, title, n = 4) {
   for(i in 1:n) {
     if(i == 1 | i == 3){yl <- range(totals)}else
       if(i == 2 | i == 4){yl <- range(totals) - mean(range(totals))}
-    addBox(all[,i], ylim = yl); addRect(all[,i]); lines(all[,i], lwd = 2)
-    rug(1:length(totals))
+    addBox(all[,i], ylim = yl); addRect(all[,i], interval = interval); lines(all[,i], lwd = 2)
+#     rug(1:length(totals))
     mtext(labs[i], 3, -2, adj = 0.01)
   }
   mtext(title, 3, 1, T, adj = 0, cex = 1.5, col = "grey")
