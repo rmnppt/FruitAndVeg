@@ -14,7 +14,7 @@ addRect <- function(x, interval, ...) {
     x <- x + (interval*2)
   }
 }
-plotSTL <- function(x, title, n = 4, interval, ...) {
+plotSTL <- function(x, title, n = 4, interval, rug = FALSE, lwd = 1, ...) {
   par(mfrow = c(n, 1), 
       mar = c(0.5, 2, 0.5, 5),
       oma = c(2, 2, 3, 1))
@@ -27,8 +27,8 @@ plotSTL <- function(x, title, n = 4, interval, ...) {
   for(i in 1:n) {
     if(i == 1 | i == 3){yl <- range(totals)}else
       if(i == 2 | i == 4){yl <- range(totals) - mean(range(totals))}
-    addBox(all[,i], ylim = yl); addRect(all[,i], interval = interval); lines(all[,i], lwd = 2)
-#     rug(1:length(totals))
+    addBox(all[,i], ylim = yl); addRect(all[,i], interval = interval); lines(all[,i], lwd = lwd)
+    if(rug) rug(1:length(totals))
     mtext(labs[i], 3, -2, adj = 0.01)
   }
   mtext(title, 3, 1, T, adj = 0, cex = 1.5, col = "grey")
