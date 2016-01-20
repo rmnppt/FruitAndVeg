@@ -1,0 +1,238 @@
+Seasonal trend decomposition of fruit and veg wholesale prices
+==============================================================
+author: Roman Popat - The Data Lab
+date: 20/01/2016
+transition: linear
+css: mystyle.css
+width: 1280 
+height: 800
+
+| ![](icons/icon-web.png) | ![](icons/icon-twitter.png) | ![](icons/icon-github.png) 
+|-------------------------|-----------------------------|---------------------------
+| rmnppt.com              | @rmnppt                     | rmnppt
+
+![](icons/White Logo small.png)
+
+Time series are everywhere
+==========================
+![](images/timeSeriesEverywhere.png)
+
+
+Seasonal-Trend decomposition
+============================
+
+* Allows separation of repeated or rhythmic effects from overall trend.
+* Fast implementation in R via `stats::stl()`
+* Very simple to understand/explain.
+
+R. B. Cleveland, W. S. Cleveland, J.E. McRae, and I. Terpenning (1990)  
+**STL: A Seasonal-Trend Decomposition Procedure Based on Loess.**  
+*Journal of Official Statistics*, 6, 3–73.
+
+
+Fruit and Veg Prices (DEFRA)
+============================
+```{r, echo = FALSE}
+opts_chunk$set(fig.retina = 2)
+library(zoo)
+library(ggplot2)
+library(dplyr)
+library(reshape2)
+library(gridExtra)
+library(animation)
+url <- "https://raw.githubusercontent.com/rmnppt/FruitAndVeg/master/Data/fruitVegTidy.csv"
+dat <- read.csv(url)
+dat$month <- factor(dat$month, c("Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+                                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+dat <- dat %>%
+  group_by(year, month, subcategory) %>%
+  summarise(price =  mean(price))
+theme_tsPlot <-   theme(text = element_text(size = 25),
+                        axis.title.y = element_text(margin = unit(c(1, 1, 1, 1), "lines")),
+                        strip.text = element_text(hjust = 0))
+```
+
+```{r}
+head(dat)
+length(unique(dat$subcategory))
+```
+
+
+Carrots
+========
+```{r}
+carrots <- subset(dat, subcategory == "Carrots")
+carrots$filled_price <- na.approx(carrots$price, rule = 2)
+carrot_ts <- ts(carrots$filled_price, frequency = 12)
+```
+
+```{r, echo=FALSE, fig.width=14, fig.height=4}
+carrots_start <- as.POSIXct("2004-01-01")
+carrots$time <- seq(carrots_start, by = "months", length.out = nrow(carrots))
+p1 <- ggplot(carrots, aes(y = price, x = time)) +
+  geom_line() +
+  geom_point(aes(y = filled_price), data = filter(carrots, is.na(price))) +
+  ylab("£ per kg") + xlab("")
+p1 + theme_tsPlot
+```
+
+
+Carrot price decomposition
+==========================
+```{r}
+carrot_stl <- stl(carrot_ts, 
+                  s.window = 12,
+                  s.degree = 1,
+                  t.window = 21,
+                  t.degree = 1)
+carrot_stl
+```
+
+Carrot price decomposition
+==========================
+transition: none
+```{r, echo=FALSE, fig.width=14, fig.height=8}
+stlToDf <- function(dat, stl_obj) {
+  total <- rowSums(stl_obj$time.series)
+  stl_results <- data.frame(total = total, stl_obj$time.series)
+  stlm <- cbind(dat$time, melt(stl_results))
+  names(stlm) <- c("time", "component", "price")
+  stlm
+}
+carrot_stlm <- stlToDf(carrots, carrot_stl)
+p2 <- ggplot(carrot_stlm, aes(x = time, y = price)) +
+  geom_line() +
+  facet_wrap(~component, nrow = 4, scales = "free_y") +
+  ylab("£ per kg") + xlab("")
+p2 + theme_tsPlot
+```
+
+
+Calculating the seasonal component
+==================================
+```{r}
+carrot_stl <- stl(carrot_ts, s.window = "periodic",
+                             t.window = 21, t.degree = 0)
+```
+```{r, echo=FALSE, fig.width=14, fig.height=8}
+carrot_stlm <- stlToDf(carrots, carrot_stl)
+p3 <- ggplot(carrots, aes(x = time, y = filled_price)) +
+  geom_line() +
+  geom_smooth(method = "lm", formula = y ~ 1) +
+  facet_wrap(~month) +
+  ylab("£ per kg") + xlab("")+ 
+  theme(axis.text.x = element_text(size = 15, angle = 315, hjust = 0)) + 
+  theme_tsPlot 
+p4 <- ggplot(filter(carrot_stlm, component == "seasonal"),
+             aes(x = time, y = price)) +
+  geom_line() + 
+  theme_tsPlot
+grid.arrange(p3, p4, heights = c(6, 2))
+```
+
+Calculating the seasonal component
+==================================
+transition: none
+```{r}
+carrot_stl <- stl(carrot_ts, s.window = 12, s.degree = 1,
+                             t.window = 21, t.degree = 1)
+```
+```{r, echo=FALSE, fig.width=14, fig.height=8}
+carrot_stlm <- stlToDf(carrots, carrot_stl)
+p3 <- ggplot(carrots, aes(x = time, y = filled_price)) +
+  geom_line() +
+  geom_smooth(method = "lm") +
+  facet_wrap(~month) +
+  ylab("£ per kg") + xlab("")+ 
+  theme(axis.text.x = element_text(size = 15, angle = 315, hjust = 0)) + 
+  theme_tsPlot 
+p4 <- ggplot(filter(carrot_stlm, component == "seasonal"),
+             aes(x = time, y = price)) +
+  geom_line() + 
+  theme_tsPlot
+grid.arrange(p3, p4, heights = c(6, 2))
+```
+
+
+Calculating the trend component
+===============================
+incremental: true
+* total - seasonal  
+![](images/loess_single.gif)
+* loess  
+![](images/loess.gif)
+
+
+Calculating the remainder
+=============================== 
+seasonal *done*  
+trend *done*  
+
+data = seasonal + trend + **remainder**
+
+
+Carrot price decomposition
+==========================
+```{r, echo=FALSE, fig.width=14, fig.height=8}
+p2 + theme_tsPlot
+```
+
+
+Examples 1: DEFRA
+=================
+    
+![](images/blog_figure3.jpg)
+
+***
+
+ place  | item                    |	seasonal | trend  
+--------|-------------------------|----------|--------
+ 1 	    | Strawberries 	          |    0.555 | 0.2436 
+ 2 	    | Narcissus-inc.Daffodils |	  0.5115 | 0.3113 
+ 3 	    | Runner Beans 	          |   0.5051 | 0.2903 
+ 4 	    | Spinach 	              |    0.474 | 0.2301 
+ 5 	    | Parsnips 	              |     0.47 | 0.3141 
+ 6 	    | Raspberries 	          |    0.462 | 0.2125
+ 7 	    | Cucumbers 	            |   0.4425 |  0.299
+ 8 	    | Celery 	                |   0.4227 | 0.3922
+ 9 	    | Carrots 	              |   0.4062 | 0.4706
+ 10 	  | Swede 	                |   0.4042 | 0.4739
+
+
+Examples 2: ONS
+===============
+![](images/winter_mortality_A.png)
+
+Examples 2: ONS
+===============
+![](images/winter_mortality_B.png)
+
+
+Pros and Cons
+=============
+**Pros**
+* Fast (underlying Fortran), good building block
+* Can measure the relative size of rhythmic / trend effects
+* Can deal with missing values (in principle!)
+* Easy to explain/understand
+
+***
+
+**Cons**
+* Many parameters to guess/tune
+* Not great for forecasting
+* Assumes that variation in time driven by cycles + trend
+* Assumes that cycles have a constant period
+
+
+Thank you
+=========
+type: section
+
+| ![](icons/icon-web.png) | ![](icons/icon-twitter.png) | ![](icons/icon-github.png) 
+|-------------------------|-----------------------------|---------------------------
+| rmnppt.com              | @rmnppt                     | rmnppt
+
+Roman Popat
+
+![](icons/White Logo small.png)
